@@ -11,9 +11,25 @@ const UserSchema = new Schema({
     },
     required: [true, 'Name is required.']
   },
-  postCount : Number,
-  posts : [PostSchema]
+  posts : [PostSchema],
+  likes: Number,
+  blogPosts: [{
+    type: Schema.Types.ObjectId,
+    ref: 'blogPost'
+  }]
 });
 
-const User = mongoose.model('users', UserSchema);
+UserSchema.virtual('postCount').get(function() {
+  return this.posts.length;
+});
+
+//using function syntax preserves this keyword to reference object instance
+UserSchema.pre('remove', function(next){
+  const BlogPost = mongoose.model('blogPost');
+
+  BlogPost.remove({ _id: { $in: this.blogPosts} })
+    .then(() => next());
+});
+
+const User = mongoose.model('user', UserSchema);
 module.exports = User;
